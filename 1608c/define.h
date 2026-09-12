@@ -69,7 +69,10 @@ typedef unsigned long u32;
 typedef unsigned short u16;
 typedef unsigned char u8;
 typedef unsigned char bool;
+#ifndef MH_TICK_TYPEDEF
+#define MH_TICK_TYPEDEF
 typedef unsigned long tick;
+#endif
 
 typedef unsigned long U32;
 typedef unsigned short U16;

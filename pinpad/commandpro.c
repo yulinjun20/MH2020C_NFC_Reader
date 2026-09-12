@@ -384,6 +384,7 @@ int Picc_Pro(void)
     BYTE buf[50];
     BYTE type,blkno,pwd[7]={0},UpdataBlkNo;
     uint16_t option,ms,TxLen,RxLen;
+    uint16_t nfc_text_len;
     BYTE txbuf[256],rxbuf[256],uid[20],sak[2];
     BYTE uidlen = 0,atslen = 0;
     BYTE buf_temp[256];
@@ -787,11 +788,12 @@ int Picc_Pro(void)
             break;
 		case 0x5a:
 			cmdBuf[1]++;
-            iRet = Dll_NfcReadTextFromTag(&cmdBuf[6], 200, &len);
+            nfc_text_len = 0;
+            iRet = Dll_NfcReadTextFromTag((char *)&cmdBuf[6], 200, &nfc_text_len);
 			if(iRet == 0)
 			{
             	cmdBuf[2] = 0;
-            	cmdBuf[3] = 2 + len;     
+            	cmdBuf[3] = 2 + nfc_text_len;
 			}
 			else
 			{

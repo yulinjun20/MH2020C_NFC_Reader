@@ -22,8 +22,7 @@ extern "C" {
 
 #include "mhscpu.h"
 #include "stdint.h"
-
-typedef uint32_t tick;
+#include "define.h" /* canonical tick: unsigned long, also declared in 1608c/define.h */
 
 
 /*****************************************************************************
