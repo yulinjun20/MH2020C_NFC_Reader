@@ -612,6 +612,21 @@
               <FileType>1</FileType>
               <FilePath>.\1608c\typeb.c</FilePath>
             </File>
+            <File>
+              <FileName>ntag.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\1608c\ntag.c</FilePath>
+            </File>
+            <File>
+              <FileName>ntag_secrets.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\1608c\ntag_secrets.c</FilePath>
+            </File>
+            <File>
+              <FileName>ntag_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\1608c\ntag_test.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -37,6 +37,16 @@
 
 #define NFC_DEBUG		0	// printf打印控制开关
 
+/*
+ * NTAG213 Phase2 PWD protection.
+ * Field firmware: keep NTAG_PROVISION_ENABLE 0 so config/key writes are
+ * not compiled. Factory / lab builds set this to 1 (or add it to the
+ * Keil C/C++ Define list) to enable the provision API and test menu.
+ */
+#ifndef NTAG_PROVISION_ENABLE
+#define NTAG_PROVISION_ENABLE   0
+#endif
+
 #define POWERON_POLLING 0 //上电即开始自动A/B polling
 #define INT_USE_CHECK_REG   1	//中断检测使用查询07寄存器的irq bit的方式，而不是使用查询中断管脚
 
@@ -59,7 +69,10 @@ typedef unsigned long u32;
 typedef unsigned short u16;
 typedef unsigned char u8;
 typedef unsigned char bool;
+#ifndef MH_TICK_TYPEDEF
+#define MH_TICK_TYPEDEF
 typedef unsigned long tick;
+#endif
 
 typedef unsigned long U32;
 typedef unsigned short U16;

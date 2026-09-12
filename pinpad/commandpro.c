@@ -5,6 +5,9 @@
 #include "commandpro.h"
 
 #include "user.h"
+#include "ntag.h"
+#include "ntag_test.h"
+#include "nfc_type2.h"
 
 unsigned char cmdBuf[CMD_MAX_BUFLEN];
 
@@ -381,6 +384,7 @@ int Picc_Pro(void)
     BYTE buf[50];
     BYTE type,blkno,pwd[7]={0},UpdataBlkNo;
     uint16_t option,ms,TxLen,RxLen;
+    uint16_t nfc_text_len;
     BYTE txbuf[256],rxbuf[256],uid[20],sak[2];
     BYTE uidlen = 0,atslen = 0;
     BYTE buf_temp[256];
@@ -784,11 +788,12 @@ int Picc_Pro(void)
             break;
 		case 0x5a:
 			cmdBuf[1]++;
-            iRet = Dll_NfcReadTextFromTag(&cmdBuf[6], 200, &len);
+            nfc_text_len = 0;
+            iRet = Dll_NfcReadTextFromTag((char *)&cmdBuf[6], 200, &nfc_text_len);
 			if(iRet == 0)
 			{
             	cmdBuf[2] = 0;
-            	cmdBuf[3] = 2 + len;     
+            	cmdBuf[3] = 2 + nfc_text_len;
 			}
 			else
 			{
@@ -807,6 +812,33 @@ int Picc_Pro(void)
             cmdBuf[4] = HI_BYTE(ABS(iRet));
             cmdBuf[5] = LOW_BYTE(ABS(iRet));
             SendingCommand();
+			break;
+		case 0x5d: /* factory provision; field builds return provision-fail */
+			cmdBuf[1]++;
+			iRet = ntag_provision_tag((len > 0) ? &cmdBuf[4] : 0, (unsigned short)len);
+			cmdBuf[2] = 0;
+			cmdBuf[3] = 2;
+			cmdBuf[4] = HI_BYTE(ABS(iRet));
+			cmdBuf[5] = LOW_BYTE(ABS(iRet));
+			SendingCommand();
+			break;
+		case 0x5e: /* unauth user-area READ probe (must fail on Scheme B tag) */
+			cmdBuf[1]++;
+			iRet = ntag_test_unauth_user_read();
+			cmdBuf[2] = 0;
+			cmdBuf[3] = 2;
+			cmdBuf[4] = HI_BYTE(ABS(iRet));
+			cmdBuf[5] = LOW_BYTE(ABS(iRet));
+			SendingCommand();
+			break;
+		case 0x5f: /* wrong-PWD PWD_AUTH probe */
+			cmdBuf[1]++;
+			iRet = ntag_test_wrong_pwd();
+			cmdBuf[2] = 0;
+			cmdBuf[3] = 2;
+			cmdBuf[4] = HI_BYTE(ABS(iRet));
+			cmdBuf[5] = LOW_BYTE(ABS(iRet));
+			SendingCommand();
 			break;
          case 0x61://read reg
          {
