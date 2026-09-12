@@ -29,6 +29,9 @@
 #include "iso14443_4.h"
 #include "iso14443a.h"
 #include "user.h"
+#include "ntag.h"
+#include "ntag_test.h"
+#include "nfc_type2.h"
 
 #define COM_BUF_SIZE 50
 #define HEAD 0x68
@@ -507,6 +510,7 @@ int MH1608_Picc_Remove(u8 isLOOP)
 }
 
 
+/* MIFARE Classic only. Do not use for NTAG213; see ntag_field_authenticate(). */
 static int Dll_MfcAuthenticate(uint8_t cType, uint16_t BlkNo, uint8_t *pKey, uint8_t *pSerialNo)
 {
     uint8_t auth_mode;
@@ -1185,7 +1189,9 @@ static int t2t_read_byte(unsigned int abs_off, unsigned char *out,
 /*
  * Dll_NfcReadTag
  * Read NDEF message from currently activated NFC Type2 Tag (static layout).
- * Return: 0 success, -100 no NDEF, -101 empty NDEF, other negative on I/O error.
+ * Return: 0 success, -100 no NDEF, -101 empty NDEF,
+ *         NTAG_ERR_AUTH_FAIL (-200), NTAG_ERR_UNRECOGNIZED (-201),
+ *         other negative on I/O error.
  */
 int Dll_NfcReadTag(unsigned char *buf, uint16_t *rlen)
 {
@@ -1209,6 +1215,13 @@ int Dll_NfcReadTag(unsigned char *buf, uint16_t *rlen)
         return -1;
     }
     *rlen = 0;
+
+    /* Phase2 field gate: no unauthenticated Type2 NDEF allow path. */
+    status = ntag_field_authenticate();
+    if(status != NTAG_OK)
+    {
+        return status;
+    }
 
     printf("Dll_NfcReadTag (Type2 static)...\r\n");
 
@@ -1427,6 +1440,20 @@ int Dll_NfcWriteTag(const unsigned char *text, uint16_t text_len)
     if(text_len > NFC_NDEF_MAX_LEN)
     {
         return -1;
+    }
+
+    /*
+     * Field NDEF write also requires PWD_AUTH. Provisioning sets a
+     * skip flag so optional NDEF can be written before AUTH0 is armed.
+     * This path never writes PWD/PACK/ACCESS/AUTH0.
+     */
+    if(!ntag_provision_is_active())
+    {
+        status = ntag_field_authenticate();
+        if(status != NTAG_OK)
+        {
+            return status;
+        }
     }
 
     printf("Dll_NfcWriteTag (Type2 static), len=%u\r\n", (unsigned int)text_len);
@@ -1980,7 +2007,7 @@ void TestNfcType2TagRead(void)
 			ndef_len = 0;
 			memset(buff, 0, sizeof(buff));
 			iRet = Dll_NfcReadTag(buff, &ndef_len);
-			printf("Dll_NfcReadTag iRet=%d, len=%u\r\n", iRet, ndef_len);
+			printf("Dll_NfcReadTag iRet=%d (%s), len=%u\r\n", iRet, ntag_err_str(iRet), ndef_len);
 			if(iRet == 0)
 			{
 				char text_buf[NFC_NDEF_MAX_LEN];
@@ -2082,8 +2109,13 @@ void NFC_Tag2_Test(void)
 	int ret;
 
 	printf("\r\n=======================\r\n");
-	printf("1.Read  NDEF data\r\n");
-	printf("2.Write NDEF data\r\n");
+	printf("1.Field read NDEF (PWD_AUTH gated)\r\n");
+	printf("2.Field write NDEF (PWD_AUTH gated, no config write)\r\n");
+	printf("4.Unauth user-area READ probe\r\n");
+	printf("5.Wrong-PWD PWD_AUTH probe\r\n");
+#if NTAG_PROVISION_ENABLE
+	printf("3.Provision NTAG213 (factory only)\r\n");
+#endif
 	printf("\r\n=======================\r\n");
 	ch = s_get_key();
 	switch(ch)
@@ -2098,7 +2130,23 @@ void NFC_Tag2_Test(void)
 			TestNfcType2TagWrite();
 		}
 		break;
-		
+#if NTAG_PROVISION_ENABLE
+		case '3':
+		{
+			TestNtagPhase2Provision();
+		}
+		break;
+#endif
+		case '4':
+		{
+			TestNtagPhase2UnauthRead();
+		}
+		break;
+		case '5':
+		{
+			TestNtagPhase2WrongPwd();
+		}
+		break;
 	}
 
 }

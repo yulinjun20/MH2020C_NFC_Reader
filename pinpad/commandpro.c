@@ -5,6 +5,9 @@
 #include "commandpro.h"
 
 #include "user.h"
+#include "ntag.h"
+#include "ntag_test.h"
+#include "nfc_type2.h"
 
 unsigned char cmdBuf[CMD_MAX_BUFLEN];
 
@@ -807,6 +810,33 @@ int Picc_Pro(void)
             cmdBuf[4] = HI_BYTE(ABS(iRet));
             cmdBuf[5] = LOW_BYTE(ABS(iRet));
             SendingCommand();
+			break;
+		case 0x5d: /* factory provision; field builds return provision-fail */
+			cmdBuf[1]++;
+			iRet = ntag_provision_tag((len > 0) ? &cmdBuf[4] : 0, (unsigned short)len);
+			cmdBuf[2] = 0;
+			cmdBuf[3] = 2;
+			cmdBuf[4] = HI_BYTE(ABS(iRet));
+			cmdBuf[5] = LOW_BYTE(ABS(iRet));
+			SendingCommand();
+			break;
+		case 0x5e: /* unauth user-area READ probe (must fail on Scheme B tag) */
+			cmdBuf[1]++;
+			iRet = ntag_test_unauth_user_read();
+			cmdBuf[2] = 0;
+			cmdBuf[3] = 2;
+			cmdBuf[4] = HI_BYTE(ABS(iRet));
+			cmdBuf[5] = LOW_BYTE(ABS(iRet));
+			SendingCommand();
+			break;
+		case 0x5f: /* wrong-PWD PWD_AUTH probe */
+			cmdBuf[1]++;
+			iRet = ntag_test_wrong_pwd();
+			cmdBuf[2] = 0;
+			cmdBuf[3] = 2;
+			cmdBuf[4] = HI_BYTE(ABS(iRet));
+			cmdBuf[5] = LOW_BYTE(ABS(iRet));
+			SendingCommand();
 			break;
          case 0x61://read reg
          {
