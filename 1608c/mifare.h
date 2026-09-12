@@ -29,6 +29,7 @@
 #define PICC_WRITE_ULTRALIGHT 0xA2				//³¬Çá¿¨Ð´¿é
 
                                   
+/* Classic Crypto1 only. NTAG213 PWD_AUTH is pcd_ntag_pwd_auth() in ntag.c. */
 int pcd_auth_state(u8 auth_mode, u8 block, u8 *psnr, u8 *pkey);      
 int pcd_read(u8 addr,u8 *preaddata);                       
 int pcd_write(u8 addr,u8 *pwritedata);
